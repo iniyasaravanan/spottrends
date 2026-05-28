@@ -2,7 +2,6 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "env": {},
   "headers": [
     {
       "source": "/(.*)",
@@ -17,7 +16,7 @@
         },
         {
           "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
+          "value": "strict-origin-when-cross-origin" 
         }
       ]
     }
