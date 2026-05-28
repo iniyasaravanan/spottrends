@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Artist {
+  id          String   @id @default(cuid())
+  spotifyId   String   @unique
+  name        String
+  imageUrl    String?
+  genres      String[]
+  followers   Int      @default(0)
+  popularity  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  popularityHistory PopularitySnapshot[]
+  audioFeatures     AudioFeature?
+  userTopTracks     UserTopTrack[]
+  userTopArtists    UserTopArtist[]
+}
+
+model PopularitySnapshot {
+  id         String   @id @default(cuid())
+  artistId   String
+  popularity Int
+  followers  Int
+  snappedAt  DateTime @default(now())
+
+  artist     Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([artistId, snappedAt])
+}
+
+model AudioFeature {
+  id               String   @id @default(cuid())
+  artistId         String   @unique
+  energy           Float
+  danceability     Float
+  valence          Float
+  tempo            Float
+  acousticness     Float
+  instrumentalness Float
+  liveness         Float
+  speechiness      Float
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  artist           Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id             String   @id @default(cuid())
+  spotifyId      String   @unique
+  displayName    String
+  email          String?
+  imageUrl       String?
+  accessToken    String
+  refreshToken   String
+  tokenExpiresAt DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  topTracks      UserTopTrack[]
+  topArtists     UserTopArtist[]
+}
+
+model UserTopTrack {
+  id         String   @id @default(cuid())
+  userId     String
+  spotifyId  String
+  name       String
+  artistId   String?
+  artistName String
+  albumName  String?
+  imageUrl   String?
+  popularity Int      @default(0)
+  rank       Int
+  timeRange  String   @default("medium_term")
+  snappedAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  artist     Artist?  @relation(fields: [artistId], references: [id])
+
+  @@index([userId, timeRange, snappedAt])
+}
+
+model UserTopArtist {
+  id        String   @id @default(cuid())
+  userId    String
+  artistId  String
+  rank      Int
+  timeRange String   @default("medium_term")
+  snappedAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  artist    Artist   @relation(fields: [artistId], references: [id])
+
+  @@index([userId, timeRange, snappedAt])
+}

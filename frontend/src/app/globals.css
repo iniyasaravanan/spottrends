@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-spotify-dark text-white;
+  }
+
+  body {
+    @apply min-h-screen font-sans antialiased;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-spotify-card rounded-xl p-5 border border-white/5;
+  }
+
+  .btn-primary {
+    @apply bg-spotify-green text-black font-semibold px-5 py-2.5 rounded-full
+           hover:brightness-110 active:scale-95 transition-all duration-150;
+  }
+
+  .btn-secondary {
+    @apply bg-white/10 text-white font-medium px-5 py-2.5 rounded-full
+           hover:bg-white/20 active:scale-95 transition-all duration-150;
+  }
+
+  .input {
+    @apply w-full bg-white/10 text-white placeholder-spotify-muted border border-white/10
+           rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-spotify-green
+           focus:border-transparent transition;
+  }
+
+  .badge {
+    @apply text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-spotify-light font-medium;
+  }
+}
