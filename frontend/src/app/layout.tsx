@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "SpotTrends — Music Analytics",
+  title: "Genre Explorer — Discover Music Through Artists",
   description:
-    "Track artist popularity history, audio features, and compare musicians with data from Spotify.",
+    "Search any artist, explore their genres, read their bio, and travel through webs of similar musicians — powered by Last.fm.",
 };
 
 export default function RootLayout({
@@ -17,10 +16,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <Navbar />
-          <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
-        </AuthProvider>
+        <Navbar />
+        <main className="max-w-5xl mx-auto px-4 py-10">{children}</main>
       </body>
     </html>
   );

@@ -1,53 +1,44 @@
-import Image from "next/image";
 import Link from "next/link";
-import type { Artist } from "@/lib/api";
+import { Users } from "lucide-react";
+import type { LfmArtistStub } from "@/lib/lastfm";
+import { getImage } from "@/lib/lastfm";
+import { formatNumber, artistHref } from "@/lib/utils";
+import ArtistAvatar from "./ArtistAvatar";
 
 interface Props {
-  artist: Artist;
-  action?: React.ReactNode;
+  artist: LfmArtistStub;
 }
 
-export default function ArtistCard({ artist, action }: Props) {
+export default function ArtistCard({ artist }: Props) {
+  const imageUrl = getImage(artist.image, "large");
+  const href = artistHref(artist.name);
+
   return (
-    <div className="card flex items-center gap-4 hover:border-white/15 transition">
-      {artist.imageUrl ? (
-        <Image
-          src={artist.imageUrl}
-          alt={artist.name}
-          width={64}
-          height={64}
-          className="rounded-lg object-cover flex-shrink-0"
+    <Link href={href} className="card-hover group flex flex-col overflow-hidden animate-fade-in">
+      {/* Square image / avatar area */}
+      <div className="relative aspect-square bg-lfm-surface overflow-hidden rounded-t-2xl">
+        <ArtistAvatar
+          name={artist.name}
+          imageUrl={imageUrl}
+          size={300}
+          className="w-full h-full object-cover !rounded-none"
         />
-      ) : (
-        <div className="w-16 h-16 rounded-lg bg-white/10 flex-shrink-0" />
-      )}
-      <div className="min-w-0 flex-1">
-        <Link
-          href={`/artist/${artist.id}`}
-          className="font-semibold hover:text-spotify-green transition truncate block"
-        >
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+      </div>
+
+      {/* Info */}
+      <div className="p-4 space-y-1">
+        <p className="font-semibold leading-snug group-hover:text-lfm-red transition truncate">
           {artist.name}
-        </Link>
-        <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="text-xs text-spotify-light">
-            Popularity: <span className="text-white">{artist.popularity}</span>
-          </span>
-          <span className="text-xs text-spotify-muted">·</span>
-          <span className="text-xs text-spotify-light">
-            {artist.followers.toLocaleString()} followers
-          </span>
-        </div>
-        {artist.genres.length > 0 && (
-          <div className="flex gap-1 mt-2 flex-wrap">
-            {artist.genres.slice(0, 3).map((g) => (
-              <span key={g} className="badge">
-                {g}
-              </span>
-            ))}
-          </div>
+        </p>
+        {artist.listeners && parseInt(artist.listeners) > 0 && (
+          <p className="flex items-center gap-1 text-xs text-lfm-muted">
+            <Users size={11} />
+            {formatNumber(artist.listeners)} listeners
+          </p>
         )}
       </div>
-      {action && <div className="flex-shrink-0">{action}</div>}
-    </div>
+    </Link>
   );
 }

@@ -4,36 +4,54 @@
 
 @layer base {
   html {
-    @apply bg-spotify-dark text-white;
+    @apply bg-lfm-bg text-white;
+    color-scheme: dark;
   }
-
   body {
     @apply min-h-screen font-sans antialiased;
   }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-lfm-border rounded-full; }
 }
 
 @layer components {
   .card {
-    @apply bg-spotify-card rounded-xl p-5 border border-white/5;
+    @apply bg-lfm-card rounded-2xl border border-lfm-border;
   }
 
-  .btn-primary {
-    @apply bg-spotify-green text-black font-semibold px-5 py-2.5 rounded-full
-           hover:brightness-110 active:scale-95 transition-all duration-150;
-  }
-
-  .btn-secondary {
-    @apply bg-white/10 text-white font-medium px-5 py-2.5 rounded-full
-           hover:bg-white/20 active:scale-95 transition-all duration-150;
-  }
-
-  .input {
-    @apply w-full bg-white/10 text-white placeholder-spotify-muted border border-white/10
-           rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-spotify-green
-           focus:border-transparent transition;
+  .card-hover {
+    @apply card transition-all duration-200
+           hover:border-white/20 hover:-translate-y-0.5 hover:shadow-xl;
   }
 
   .badge {
-    @apply text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-spotify-light font-medium;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-white/10 text-lfm-light;
+  }
+
+  .input {
+    @apply w-full bg-lfm-surface text-white placeholder-lfm-muted
+           border border-lfm-border rounded-xl px-4 py-3
+           focus:outline-none focus:ring-2 focus:ring-lfm-red focus:border-transparent
+           transition;
+  }
+
+  .btn-primary {
+    @apply bg-lfm-red text-white font-semibold px-5 py-2.5 rounded-full
+           hover:brightness-110 active:scale-95 transition-all duration-150;
+  }
+
+  .btn-ghost {
+    @apply text-lfm-light hover:text-white transition text-sm;
+  }
+
+  .section-title {
+    @apply text-lg font-semibold text-white;
+  }
+
+  .divider {
+    @apply border-t border-lfm-border;
   }
 }

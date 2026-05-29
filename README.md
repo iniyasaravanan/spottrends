@@ -1,230 +1,115 @@
-# SpotTrends
+# Genre Explorer
 
-Music analytics platform that tracks Spotify artist popularity over time, visualises audio features, and lets users compare artists side by side.
+A frontend-only music discovery app that lets you search artists, explore
+their genres, read their biography, and travel through networks of similar
+musicians — all powered by the **Last.fm API** with no backend, no database,
+and no auth.
+
+Live demo: deployed on Vercel · Data: Last.fm
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           Client (Vercel)                           │
-│                                                                     │
-│   Next.js 14  ──  Tailwind CSS  ──  Recharts                       │
-│      │                                                              │
-│   Pages:  /search  /artist/[id]  /compare  /dashboard              │
-│      │                                                              │
-│   AuthContext (JWT in localStorage)                                 │
-└──────────────────────────┬──────────────────────────────────────────┘
-                           │  HTTPS REST
-┌──────────────────────────▼──────────────────────────────────────────┐
-│                      API Server (Railway)                           │
-│                                                                     │
-│   Express + TypeScript                                              │
-│                                                                     │
-│   POST /api/auth/login       → redirect to Spotify OAuth            │
-│   GET  /api/auth/callback    → exchange code, set JWT               │
-│   GET  /api/auth/me          → current user info                    │
-│                                                                     │
-│   GET  /api/artist/search    → proxy Spotify search                 │
-│   POST /api/artist/track     → save artist + snapshot + features    │
-│   GET  /api/artist           → list all tracked artists             │
-│   GET  /api/artist/:id       → single artist + audio features       │
-│   GET  /api/artist/:id/history   → popularity snapshots             │
-│   GET  /api/artist/:id/audio-features                               │
-│                                                                     │
-│   GET  /api/user/profile     → logged-in user profile (JWT)        │
-│   GET  /api/user/top         → top tracks & artists (JWT)           │
-│                                                                     │
-│   node-cron  → daily 00:00 UTC popularity snapshot for all artists  │
-└──────────────────────────┬──────────────────────────────────────────┘
-                           │  Prisma ORM
-┌──────────────────────────▼──────────────────────────────────────────┐
-│                    PostgreSQL (Railway)                              │
-│                                                                     │
-│  artists            spotifyId, name, imageUrl, genres,              │
-│                     followers, popularity                           │
-│                                                                     │
-│  popularity_snapshots  artistId → artists, popularity,             │
-│                        followers, snappedAt                         │
-│                                                                     │
-│  audio_features     artistId → artists, energy, danceability,      │
-│                     valence, tempo, acousticness,                   │
-│                     instrumentalness, liveness, speechiness         │
-│                                                                     │
-│  users              spotifyId, displayName, email,                  │
-│                     accessToken, refreshToken, tokenExpiresAt       │
-│                                                                     │
-│  user_top_tracks    userId → users, artistId → artists,            │
-│                     rank, timeRange, snappedAt                      │
-│                                                                     │
-│  user_top_artists   userId → users, artistId → artists,            │
-│                     rank, timeRange, snappedAt                      │
-└─────────────────────────────────────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────────┐
-│                     Spotify Web API                                 │
-│  • Client Credentials (search, artist, audio-features)             │
-│  • Authorization Code (user top tracks/artists)                    │
-└─────────────────────────────────────────────────────────────────────┘
+Browser
+  │
+  │  Next.js 14 (App Router)   ← deployed on Vercel
+  │
+  ├─ /                          Home page — debounced artist search
+  │     └─ artist.search API
+  │
+  └─ /artist/[name]             Artist detail page (Server Component)
+        ├─ artist.getInfo API   → name, bio, listener count, scrobbles, tags
+        └─ artist.getSimilar    → up to 12 similar artists (click-through)
+
+  All calls go directly to:
+  https://ws.audioscrobbler.com/2.0/?api_key=...&format=json
 ```
+
+**No backend. No database. No auth.**  
+The Last.fm API is public and key-only — the key is embedded as a
+`NEXT_PUBLIC_` env var and called directly from the browser on the search
+page, and from the server during SSR on artist pages (with 1-hour cache
+via `next: { revalidate: 3600 }`).
 
 ---
 
 ## Project Structure
 
 ```
-spottrends/
-├── backend/
-│   ├── prisma/
-│   │   ├── schema.prisma
-│   │   └── migrations/
-│   │       └── 20240101000000_init/migration.sql
-│   ├── src/
-│   │   ├── index.ts                  Express app + server
-│   │   ├── middleware/
-│   │   │   └── auth.ts               JWT verify middleware
-│   │   ├── routes/
-│   │   │   ├── artist.ts             Artist CRUD + search
-│   │   │   ├── auth.ts               Spotify OAuth flow
-│   │   │   └── user.ts               User top data
-│   │   ├── services/
-│   │   │   └── spotify.ts            Spotify API wrapper
-│   │   └── jobs/
-│   │       └── popularitySnapshot.ts node-cron daily job
-│   ├── railway.json
-│   ├── package.json
-│   └── tsconfig.json
-│
-└── frontend/
-    ├── src/
-    │   ├── app/
-    │   │   ├── layout.tsx
-    │   │   ├── page.tsx              Home / trending
-    │   │   ├── search/page.tsx       Artist search + track
-    │   │   ├── artist/[id]/page.tsx  Artist detail + charts
-    │   │   ├── compare/page.tsx      Side-by-side comparison
-    │   │   ├── dashboard/page.tsx    User top tracks/artists
-    │   │   └── auth/
-    │   │       ├── callback/page.tsx  Saves JWT, redirects
-    │   │       └── error/page.tsx
-    │   ├── components/
-    │   │   ├── Navbar.tsx
-    │   │   ├── ArtistCard.tsx
-    │   │   ├── PopularityChart.tsx   Recharts AreaChart
-    │   │   ├── AudioFeaturesRadar.tsx Recharts RadarChart
-    │   │   └── PopularityBar.tsx
-    │   ├── context/
-    │   │   └── AuthContext.tsx
-    │   └── lib/
-    │       ├── api.ts                Typed fetch client
-    │       └── auth.ts               Token helpers
-    ├── vercel.json
-    ├── next.config.ts
-    ├── tailwind.config.ts
-    └── package.json
+frontend/
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx                Root layout + Navbar
+│   │   ├── page.tsx                  Home: debounced search + suggestion chips
+│   │   ├── globals.css
+│   │   └── artist/
+│   │       └── [name]/
+│   │           └── page.tsx          Artist detail — Server Component
+│   ├── components/
+│   │   ├── Navbar.tsx
+│   │   ├── ArtistCard.tsx            Search result card
+│   │   ├── SimilarArtistCard.tsx     Smaller card with match %
+│   │   └── ArtistAvatar.tsx          Photo or coloured initials fallback
+│   └── lib/
+│       ├── lastfm.ts                 Last.fm API client + types
+│       └── utils.ts                  formatNumber, artistHref, accentColor
+├── tailwind.config.ts                Last.fm dark theme tokens
+├── next.config.ts                    Image domains for lastfm CDN
+└── package.json
 ```
 
 ---
 
 ## Local Development
 
-### Prerequisites
-
-- Node.js 20+
-- PostgreSQL 15+ (or Docker)
-- Spotify Developer app ([create one](https://developer.spotify.com/dashboard))
-
-### 1 — Spotify App Setup
-
-In your Spotify Dashboard:
-- Redirect URI: `http://localhost:4000/api/auth/callback`
-- Note your **Client ID** and **Client Secret**
-
-### 2 — Backend
-
-```bash
-cd backend
-cp .env.example .env
-# Fill in DATABASE_URL, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, JWT_SECRET
-npm install
-npm run db:generate
-npm run db:migrate:dev
-npm run dev
-# API running at http://localhost:4000
-```
-
-### 3 — Frontend
-
 ```bash
 cd frontend
-cp .env.example .env.local
-# Set NEXT_PUBLIC_API_URL=http://localhost:4000
+cp .env.example .env.local          # API key already set
 npm install
 npm run dev
-# App running at http://localhost:3000
+# → http://localhost:3000
 ```
 
----
-
-## Deployment
-
-### Railway (backend + PostgreSQL)
-
-1. Create a new Railway project
-2. Add a **PostgreSQL** service — Railway injects `DATABASE_URL` automatically
-3. Add a **Node** service pointing at `/backend`
-4. Set environment variables:
-   ```
-   SPOTIFY_CLIENT_ID=...
-   SPOTIFY_CLIENT_SECRET=...
-   SPOTIFY_REDIRECT_URI=https://<your-railway-domain>/api/auth/callback
-   JWT_SECRET=<random 64-char string>
-   FRONTEND_URL=https://<your-vercel-domain>
-   NODE_ENV=production
-   ```
-5. `railway.json` configures the build + start command (`prisma migrate deploy && node dist/index.js`)
-
-### Vercel (frontend)
-
-1. Import the `/frontend` directory into Vercel
-2. Set environment variable:
-   ```
-   NEXT_PUBLIC_API_URL=https://<your-railway-domain>
-   ```
-3. Update your Spotify app's Redirect URI to the Railway URL
-4. `vercel.json` sets security headers and maps the env var from a Vercel secret
+No database setup. No OAuth. Just run it.
 
 ---
 
-## Environment Variables
+## Deployment (Vercel)
 
-### Backend (`backend/.env`)
+1. Import `/frontend` from GitHub into Vercel
+2. Root directory: **`frontend`**
+3. Add environment variable:
+   ```
+   NEXT_PUBLIC_LASTFM_API_KEY = 9f3da47b9e70ea2bd326c7bb603b0892
+   ```
+4. Deploy — done.
 
-| Variable | Description |
+Every `git push` auto-redeploys.
+
+---
+
+## Last.fm Endpoints Used
+
+| Endpoint | Used for |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `PORT` | API port (default 4000) |
-| `SPOTIFY_CLIENT_ID` | Spotify app client ID |
-| `SPOTIFY_CLIENT_SECRET` | Spotify app client secret |
-| `SPOTIFY_REDIRECT_URI` | OAuth callback URL |
-| `JWT_SECRET` | Secret for signing JWTs |
-| `FRONTEND_URL` | Frontend origin (CORS + redirect) |
-
-### Frontend (`frontend/.env.local`)
-
-| Variable | Description |
-|---|---|
-| `NEXT_PUBLIC_API_URL` | Backend API base URL |
+| `artist.search` | Debounced search on the home page |
+| `artist.getInfo` | Bio, tags, listener/scrobble stats on the artist page |
+| `artist.getSimilar` | Similar artists grid (up to 12), each clickable |
 
 ---
 
-## Key Design Decisions
+## Design Notes
 
-**Audio features are artist-level averages** — Spotify's audio features API works at the track level. SpotTrends fetches an artist's top 5 tracks and averages the values to produce an artist-level audio fingerprint stored once in `audio_features`.
-
-**Daily cron job loops with rate limiting** — The `popularitySnapshot` job sleeps 100 ms between Spotify API calls to stay within Spotify's rate limits, even with hundreds of tracked artists.
-
-**JWT in localStorage, not cookies** — Keeps the frontend a pure SPA without needing `sameSite` cookie coordination across Railway and Vercel domains. For higher security needs, move to `HttpOnly` cookies served from the same domain.
-
-**Prisma `upsert` everywhere** — Artist records can be re-tracked without duplicates; user records are refreshed on every login.
+- **Server Components for artist pages** — the `[name]` page is async and fetches
+  Last.fm data on the server with a 1-hour revalidation window. Fast initial
+  paint, good SEO, no loading spinner for the hero content.
+- **Client Component for search** — the home page is `"use client"` to support
+  debounced input with local state. Search results call Last.fm directly from
+  the browser.
+- **Deterministic avatar colours** — if Last.fm returns no image for an artist,
+  a coloured placeholder is shown using the artist name as a hash seed, so the
+  colour is consistent across page loads.
+- **`artist.name` as route param** — Last.fm is name-based (not ID-based), so
+  artist pages are `/artist/Radiohead`, `/artist/The%20Beatles`, etc.
