@@ -26,7 +26,6 @@ Browser
   https://ws.audioscrobbler.com/2.0/?api_key=...&format=json
 ```
 
-**No backend. No database. No auth.**  
 The Last.fm API is public and key-only — the key is embedded as a
 `NEXT_PUBLIC_` env var and called directly from the browser on the search
 page, and from the server during SSR on artist pages (with 1-hour cache
