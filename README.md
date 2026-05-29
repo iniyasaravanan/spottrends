@@ -1,9 +1,8 @@
 # Genre Explorer
 
-A frontend-only music discovery app that lets you search artists, explore
+A music discovery app that lets you search artists, explore
 their genres, read their biography, and travel through networks of similar
-musicians — all powered by the **Last.fm API** with no backend, no database,
-and no auth.
+musicians — all powered by the **Last.fm API** 
 
 Live demo: deployed on Vercel · Data: Last.fm
 
