@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import { Caveat, Nunito } from "next/font/google";
+import { Syne, DM_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 
-const caveat = Caveat({
+const syne = Syne({
   subsets: ["latin"],
-  variable: "--font-caveat",
+  variable: "--font-syne",
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
-const nunito = Nunito({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-nunito",
+  variable: "--font-dm-sans",
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
@@ -28,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${caveat.variable} ${nunito.variable}`}>
+    <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
       <body>
         <Navbar />
         <main className="max-w-5xl mx-auto px-4 py-10">{children}</main>

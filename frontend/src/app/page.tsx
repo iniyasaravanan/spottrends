@@ -9,35 +9,31 @@ import Link from "next/link";
 // ─── Suggestions ──────────────────────────────────────────────────────────────
 
 const SUGGESTIONS = [
-  { name: "Radiohead",       emoji: "🎸" },
-  { name: "The Beatles",     emoji: "🎵" },
-  { name: "Kendrick Lamar",  emoji: "🎤" },
-  { name: "Taylor Swift",    emoji: "✨" },
-  { name: "Daft Punk",       emoji: "🤖" },
-  { name: "Miles Davis",     emoji: "🎺" },
-  { name: "Björk",           emoji: "🌸" },
-  { name: "Frank Ocean",     emoji: "🌊" },
-  { name: "Led Zeppelin",    emoji: "⚡" },
-  { name: "Amy Winehouse",   emoji: "🌹" },
-  { name: "Portishead",      emoji: "🌙" },
-  { name: "Kanye West",      emoji: "🎹" },
+  "Radiohead",
+  "The Beatles",
+  "Kendrick Lamar",
+  "Taylor Swift",
+  "Daft Punk",
+  "Miles Davis",
+  "Björk",
+  "Frank Ocean",
+  "Led Zeppelin",
+  "Amy Winehouse",
+  "Portishead",
+  "Kanye West",
 ];
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+// ─── Skeleton grid ────────────────────────────────────────────────────────────
 
 function SkeletonGrid() {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
       {Array.from({ length: 10 }).map((_, i) => (
-        <div
-          key={i}
-          className="bg-white border border-cream-300 rounded-sm animate-pulse"
-          style={{ transform: `rotate(${(i % 5) - 2}deg)` }}
-        >
-          <div className="mx-3 mt-3 aspect-square bg-cream-200 rounded-sm" />
-          <div className="px-3 pt-2 pb-5 space-y-2">
-            <div className="h-4 bg-cream-200 rounded w-3/4" />
-            <div className="h-3 bg-cream-100 rounded w-1/2" />
+        <div key={i} className="card overflow-hidden animate-pulse">
+          <div className="aspect-square bg-ivory-200" />
+          <div className="px-3 py-3 space-y-2">
+            <div className="h-3.5 bg-ivory-200 rounded w-3/4" />
+            <div className="h-3 bg-ivory-100 rounded w-1/2" />
           </div>
         </div>
       ))}
@@ -82,58 +78,64 @@ export default function HomePage() {
     setQuery(""); setResults([]); setSearched(false); setError("");
   }
 
-  const showResults  = !loading && results.length > 0;
-  const showEmpty    = !loading && searched && results.length === 0;
-  const showSuggest  = !loading && !searched;
+  const showResults = !loading && results.length > 0;
+  const showEmpty   = !loading && searched && results.length === 0;
+  const showSuggest = !loading && !searched;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
 
       {/* ── Hero ── */}
-      <div className="text-center space-y-3 pt-4">
-        {/* Decorative doodles */}
-        <div className="flex justify-center gap-8 text-2xl text-brown-300 select-none">
-          <span className="-rotate-12">♩</span>
-          <span className="rotate-6">★</span>
-          <span className="-rotate-3">♪</span>
-          <span className="rotate-12">✦</span>
-          <span className="-rotate-6">♫</span>
-        </div>
-
-        <h1 className="font-hand text-5xl sm:text-6xl text-brown-800 leading-tight">
-          Music Genre Explorer
+      <div className="text-center space-y-4 pt-6">
+        <p className="font-sans text-xs font-semibold tracking-[0.2em] uppercase text-navy-muted">
+          Powered by Last.fm
+        </p>
+        <h1 className="font-display font-bold text-5xl sm:text-6xl text-navy leading-tight tracking-tight">
+          Music Genre<br className="hidden sm:inline" /> Explorer
         </h1>
-        <p className="font-sans text-brown-500 max-w-md mx-auto text-sm sm:text-base">
-          Search any artist · explore their genres &amp; bio · click through a web of similar musicians
+        <p className="font-sans text-navy-muted max-w-sm mx-auto text-sm leading-relaxed">
+          Search any artist, explore their genres &amp; bio, and navigate through
+          webs of similar musicians.
         </p>
       </div>
 
       {/* ── Search bar ── */}
       <div className="max-w-lg mx-auto">
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-brown-400 text-lg select-none">
-            ✏️
-          </span>
+          {/* Search icon */}
+          <svg
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-navy-muted pointer-events-none"
+            width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+
           <input
-            className="input-scrapbook pl-12 pr-12"
+            className="input pl-11 pr-10"
             placeholder="Search for an artist…"
             value={query}
             onChange={handleChange}
             autoFocus
           />
+
           {query && (
             <button
               onClick={handleClear}
-              className="absolute right-4 top-1/2 -translate-y-1/2 font-hand text-brown-400 hover:text-brown-700 transition text-lg"
+              aria-label="Clear search"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-navy-muted hover:text-navy transition"
             >
-              ✕
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
             </button>
           )}
         </div>
+
         {error && (
-          <p className="mt-2 text-center font-hand text-base text-washi-red">
-            ✕ {error}
-          </p>
+          <p className="mt-2 text-center font-sans text-sm text-red-500">{error}</p>
         )}
       </div>
 
@@ -143,10 +145,10 @@ export default function HomePage() {
       {/* ── Results ── */}
       {showResults && (
         <div className="space-y-4 animate-fade-up">
-          <p className="font-hand text-lg text-brown-500 text-center">
-            ✦ {results.length} artists found for &ldquo;{query}&rdquo; ✦
+          <p className="font-sans text-sm text-navy-muted text-center">
+            {results.length} artists found for &ldquo;{query}&rdquo;
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {results.map((a) => (
               <ArtistCard key={a.mbid || a.name} artist={a} />
             ))}
@@ -156,44 +158,37 @@ export default function HomePage() {
 
       {/* ── No results ── */}
       {showEmpty && (
-        <div className="text-center py-12 space-y-2">
-          <p className="text-3xl">🎵</p>
-          <p className="font-hand text-xl text-brown-500">
-            No artists found for &ldquo;{query}&rdquo;
+        <div className="text-center py-16 space-y-2">
+          <p className="font-display font-semibold text-2xl text-navy">No results</p>
+          <p className="font-sans text-sm text-navy-muted">
+            No artists found for &ldquo;{query}&rdquo; — try a different spelling?
           </p>
-          <p className="font-sans text-sm text-brown-400">Try a different spelling?</p>
         </div>
       )}
 
       {/* ── Suggestions ── */}
       {showSuggest && (
         <div className="space-y-5">
-          <div className="divider-tape">
-            <span className="font-hand text-base text-brown-400 px-3 whitespace-nowrap">
-              ✦ start here ✦
+          <div className="divider">
+            <span className="font-sans text-xs font-semibold tracking-[0.15em] uppercase text-navy-muted px-3 whitespace-nowrap">
+              Explore these artists
             </span>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-3">
-            {SUGGESTIONS.map(({ name, emoji }) => (
+          <div className="flex flex-wrap justify-center gap-2">
+            {SUGGESTIONS.map((name) => (
               <Link
                 key={name}
                 href={artistHref(name)}
-                className="group flex items-center gap-2 bg-white border border-cream-300 rounded-lg
-                           px-4 py-2 font-hand text-base text-brown-700
-                           hover:border-brown-400 hover:bg-cream-50 hover:shadow-card
+                className="px-4 py-2 rounded-full border border-ivory-300
+                           font-sans text-sm text-navy
+                           hover:border-navy hover:bg-white hover:shadow-card
                            transition-all duration-150"
               >
-                <span className="text-base">{emoji}</span>
                 {name}
               </Link>
             ))}
           </div>
-
-          {/* Little decorative note */}
-          <p className="text-center font-hand text-brown-400 text-sm mt-2">
-            click an artist · see their genres · explore similar musicians ♪
-          </p>
         </div>
       )}
 

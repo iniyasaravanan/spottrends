@@ -43,7 +43,7 @@ export default function ArtistAvatar({
   // Initials placeholder — same colour every render for a given name
   return (
     <div
-      className={`flex-shrink-0 flex items-center justify-center font-bold text-white select-none ${className}`}
+      className={`flex-shrink-0 flex items-center justify-center font-display font-bold text-white select-none ${className}`}
       style={{
         width: size,
         height: size,

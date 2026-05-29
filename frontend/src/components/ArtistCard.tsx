@@ -1,54 +1,67 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import type { LfmArtistStub } from "@/lib/lastfm";
 import { getImage } from "@/lib/lastfm";
-import { formatNumber, artistHref, polaroidRotation, washiColor } from "@/lib/utils";
-import ArtistAvatar from "./ArtistAvatar";
+import { formatNumber, artistHref, accentColor, initials } from "@/lib/utils";
 
 interface Props {
   artist: LfmArtistStub;
 }
 
 export default function ArtistCard({ artist }: Props) {
+  const [imgFailed, setImgFailed] = useState(false);
+
   const imageUrl = getImage(artist.image, "large");
-  const href = artistHref(artist.name);
-  const rot = polaroidRotation(artist.name);
-  // Pick a washi colour for the tape strip at the top
-  const tape = washiColor(artist.name + "tape");
+  const href     = artistHref(artist.name);
+  const color    = accentColor(artist.name);
+  const showImg  = !!imageUrl && !imgFailed;
 
   return (
-    <Link
-      href={href}
-      className="group block animate-fade-up"
-      style={{ transform: `rotate(${rot}deg)`, transformOrigin: "center" }}
-    >
-      <div className="polaroid group-hover:!transform group-hover:rotate-0 group-hover:scale-105">
-        {/* Washi tape strip at the top */}
-        <div
-          className="h-4 w-14 mx-auto -mt-2 mb-1 rounded-sm opacity-80"
-          style={{ backgroundColor: tape.bg }}
-        />
+    <Link href={href} className="group block animate-fade-up">
+      <div className="card overflow-hidden hover:shadow-lift transition-shadow duration-200">
 
-        {/* Square photo area */}
-        <div className="mx-3 overflow-hidden bg-cream-200" style={{ aspectRatio: "1" }}>
-          <ArtistAvatar
-            name={artist.name}
-            imageUrl={imageUrl}
-            size={240}
-            className="w-full h-full"
-          />
+        {/* Square image / avatar area */}
+        <div
+          className="relative w-full overflow-hidden"
+          style={{ aspectRatio: "1", backgroundColor: color }}
+        >
+          {/* Initials — always present as the background layer */}
+          <div
+            className="absolute inset-0 flex items-center justify-center
+                       text-white font-display font-bold select-none"
+            style={{ fontSize: "2.2rem" }}
+          >
+            {initials(artist.name)}
+          </div>
+
+          {/* Photo — sits on top; hides itself on error, revealing initials */}
+          {imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl}
+              alt={artist.name}
+              className={`absolute inset-0 w-full h-full object-cover
+                          group-hover:scale-105 transition-transform duration-300
+                          ${showImg ? "" : "hidden"}`}
+              onError={() => setImgFailed(true)}
+            />
+          )}
         </div>
 
-        {/* Polaroid caption area */}
-        <div className="px-3 pt-2 pb-4">
-          <p className="font-hand text-lg leading-snug text-brown-800 truncate">
+        {/* Info */}
+        <div className="px-3 py-3">
+          <p className="font-display font-semibold text-sm text-navy leading-snug truncate">
             {artist.name}
           </p>
           {artist.listeners && parseInt(artist.listeners) > 0 && (
-            <p className="font-sans text-xs text-brown-400 mt-0.5">
-              ♪ {formatNumber(artist.listeners)} listeners
+            <p className="font-sans text-xs text-navy-muted mt-0.5">
+              {formatNumber(artist.listeners)} listeners
             </p>
           )}
         </div>
+
       </div>
     </Link>
   );

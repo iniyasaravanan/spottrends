@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as d3 from "d3-force";
-import { artistHref, polaroidRotation, accentColor } from "@/lib/utils";
+import { artistHref, accentColor, initials } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,10 +21,8 @@ interface Props {
 interface SimNode extends d3.SimulationNodeDatum {
   id: string;
   name: string;
-  imageUrl: string | null;
   isCenter: boolean;
   match: number;
-  rotation: number;
 }
 
 interface SimLink extends d3.SimulationLinkDatum<SimNode> {
@@ -39,9 +37,8 @@ const H = 520;
 const CX = W / 2;
 const CY = H / 2;
 
-// Polaroid dimensions
-const CENTER_DIM = { w: 100, h: 126, imgH: 88 };
-const NODE_DIM   = { w: 72,  h: 92,  imgH: 62 };
+const CENTER_R = 50;
+const NODE_R   = 32;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -60,24 +57,16 @@ function buildNodes(center: Props["center"], similar: GraphArtist[]): SimNode[] 
   const centerNode: SimNode = {
     id: "center",
     name: center.name,
-    imageUrl: center.imageUrl,
     isCenter: true,
     match: 1,
-    rotation: polaroidRotation(center.name),
-    x: CX,
-    y: CY,
-    fx: CX, // stay fixed
-    fy: CY,
+    x: CX, y: CY, fx: CX, fy: CY,
   };
 
   const simNodes: SimNode[] = similar.map((s, i) => ({
     id: `sim-${i}`,
     name: s.name,
-    imageUrl: s.imageUrl,
     isCenter: false,
     match: s.match,
-    rotation: polaroidRotation(s.name),
-    // Initial position spread evenly around center
     x: CX + Math.cos((i / similar.length) * 2 * Math.PI) * 200,
     y: CY + Math.sin((i / similar.length) * 2 * Math.PI) * 200,
   }));
@@ -95,7 +84,7 @@ function buildLinks(similar: GraphArtist[]): SimLink[] {
   }));
 }
 
-// ─── SVG Polaroid node ────────────────────────────────────────────────────────
+// ─── Circle node ─────────────────────────────────────────────────────────────
 
 interface NodeProps {
   node: SimNode;
@@ -103,134 +92,69 @@ interface NodeProps {
   onClick: (e: React.MouseEvent) => void;
 }
 
-function PolaroidNode({ node, onPointerDown, onClick }: NodeProps) {
-  const dim = node.isCenter ? CENTER_DIM : NODE_DIM;
-  const x = node.x ?? CX;
-  const y = node.y ?? CY;
-  const r = node.rotation;
+function CircleNode({ node, onPointerDown, onClick }: NodeProps) {
+  const x     = node.x ?? CX;
+  const y     = node.y ?? CY;
+  const r     = node.isCenter ? CENTER_R : NODE_R;
   const color = accentColor(node.name);
+  const label = initials(node.name);
+
+  const maxLen     = node.isCenter ? 16 : 12;
+  const displayName =
+    node.name.length > maxLen ? node.name.slice(0, maxLen - 1) + "…" : node.name;
 
   return (
     <g
-      transform={`translate(${x},${y}) rotate(${r})`}
-      style={{ cursor: node.isCenter ? "grab" : "pointer" }}
+      transform={`translate(${x},${y})`}
+      style={{ cursor: node.isCenter ? "default" : "pointer" }}
       onPointerDown={onPointerDown}
       onClick={onClick}
     >
-      {/* Shadow offset */}
-      <rect
-        x={-dim.w / 2 + 4}
-        y={-dim.h / 2 + 4}
-        width={dim.w}
-        height={dim.h}
-        rx={3}
-        fill="rgba(74,55,40,0.18)"
-      />
+      {/* Soft shadow */}
+      <circle r={r} fill="rgba(26,43,94,0.10)" transform="translate(2,3)" />
 
-      {/* White polaroid frame */}
-      <rect
-        x={-dim.w / 2}
-        y={-dim.h / 2}
-        width={dim.w}
-        height={dim.h}
-        rx={3}
-        fill="white"
-        stroke="rgba(74,55,40,0.12)"
-        strokeWidth={1}
-      />
+      {/* Main circle */}
+      <circle r={r} fill={color} />
 
-      {/* Photo area: image or coloured placeholder */}
-      {node.imageUrl ? (
-        <image
-          href={node.imageUrl}
-          x={-dim.w / 2 + 5}
-          y={-dim.h / 2 + 5}
-          width={dim.w - 10}
-          height={dim.imgH}
-          preserveAspectRatio="xMidYMid slice"
-        />
-      ) : (
-        <>
-          <rect
-            x={-dim.w / 2 + 5}
-            y={-dim.h / 2 + 5}
-            width={dim.w - 10}
-            height={dim.imgH}
-            fill={color}
-            rx={2}
-          />
-          <text
-            x={0}
-            y={-dim.h / 2 + 5 + dim.imgH / 2 + 6}
-            textAnchor="middle"
-            fontFamily="var(--font-caveat), cursive"
-            fontSize={node.isCenter ? 18 : 14}
-            fill="white"
-            fontWeight="bold"
-            style={{ userSelect: "none" }}
-          >
-            {node.name.slice(0, 2).toUpperCase()}
-          </text>
-        </>
-      )}
-
-      {/* Caption */}
+      {/* Initials */}
       <text
-        x={0}
-        y={dim.h / 2 - 13}
         textAnchor="middle"
-        fontFamily="var(--font-caveat), cursive"
-        fontSize={node.isCenter ? 14 : 11}
-        fill="#4A3728"
+        dy="0.38em"
+        fill="white"
+        fontFamily="var(--font-syne), sans-serif"
+        fontSize={node.isCenter ? 20 : 13}
+        fontWeight="700"
         style={{ userSelect: "none" }}
       >
-        {node.name.length > (node.isCenter ? 18 : 14)
-          ? node.name.slice(0, node.isCenter ? 17 : 13) + "…"
-          : node.name}
+        {label}
       </text>
 
-      {/* Pin on center node */}
-      {node.isCenter && (
-        <circle
-          cx={0}
-          cy={-dim.h / 2 - 9}
-          r={8}
-          fill="#F4B8C1"
-          stroke="#D49AA8"
-          strokeWidth={2}
-        />
-      )}
+      {/* Name label below */}
+      <text
+        y={r + 16}
+        textAnchor="middle"
+        fill="#1A2B5E"
+        fontFamily="var(--font-dm-sans), sans-serif"
+        fontSize={node.isCenter ? 12 : 10}
+        fontWeight={node.isCenter ? "600" : "500"}
+        style={{ userSelect: "none" }}
+      >
+        {displayName}
+      </text>
 
-      {/* Match badge on similar nodes */}
-      {!node.isCenter && node.match > 0 && (
+      {/* Match percentage above similar nodes */}
+      {!node.isCenter && (
         <text
-          x={dim.w / 2 - 2}
-          y={-dim.h / 2 + 14}
-          textAnchor="end"
-          fontFamily="var(--font-nunito), sans-serif"
-          fontSize={8}
-          fontWeight="700"
-          fill="white"
+          y={-r - 7}
+          textAnchor="middle"
+          fill={color}
+          fontFamily="var(--font-dm-sans), sans-serif"
+          fontSize={9}
+          fontWeight="600"
+          style={{ userSelect: "none" }}
         >
-          <tspan
-            dx={0}
-            dy={0}
-            style={{
-              // Inline rect via SVG background — approximate with a rect sibling below
-            }}
-          />
           {Math.round(node.match * 100)}%
         </text>
-      )}
-      {!node.isCenter && node.match > 0 && (
-        <rect
-          x={dim.w / 2 - 22}
-          y={-dim.h / 2 + 4}
-          width={20}
-          height={12}
-          rx={3}
-          fill="#D47878"
-        />
       )}
     </g>
   );
@@ -239,15 +163,15 @@ function PolaroidNode({ node, onPointerDown, onClick }: NodeProps) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ForceGraph({ center, similar }: Props) {
-  const router = useRouter();
-  const svgRef = useRef<SVGSVGElement>(null);
-  const simRef = useRef<d3.Simulation<SimNode, SimLink> | null>(null);
+  const router  = useRouter();
+  const svgRef  = useRef<SVGSVGElement>(null);
+  const simRef  = useRef<d3.Simulation<SimNode, SimLink> | null>(null);
 
   const [nodes, setNodes] = useState<SimNode[]>(() =>
     buildNodes(center, similar)
   );
 
-  // Track drag state without triggering re-renders
+  // Drag state — refs avoid re-renders
   const dragging = useRef<SimNode | null>(null);
   const hasMoved  = useRef(false);
 
@@ -268,13 +192,14 @@ export default function ForceGraph({ center, similar }: Props) {
       .force("charge", d3.forceManyBody<SimNode>().strength(-180))
       .force(
         "collide",
-        d3.forceCollide<SimNode>().radius((d) => (d.isCenter ? 68 : 48))
+        d3.forceCollide<SimNode>().radius((d) =>
+          d.isCenter ? CENTER_R + 20 : NODE_R + 16
+        )
       )
-      // Soft boundary: nudge nodes back inside the viewBox
       .on("tick", () => {
         for (const n of sim.nodes()) {
           if (n.isCenter) continue;
-          const margin = 50;
+          const margin = 60;
           if (n.x !== undefined) n.x = Math.max(margin, Math.min(W - margin, n.x));
           if (n.y !== undefined) n.y = Math.max(margin, Math.min(H - margin, n.y));
         }
@@ -286,16 +211,15 @@ export default function ForceGraph({ center, similar }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Pointer events (drag + click) ──────────────────────────────────────────
+  // ── Pointer events (drag + click distinction) ──────────────────────────────
 
   function handleNodePointerDown(e: React.PointerEvent, node: SimNode) {
     e.preventDefault();
     e.stopPropagation();
     if (!svgRef.current || !simRef.current) return;
 
-    hasMoved.current = false;
-    dragging.current = node;
-
+    hasMoved.current  = false;
+    dragging.current  = node;
     node.fx = node.x;
     node.fy = node.y;
     simRef.current.alphaTarget(0.3).restart();
@@ -315,7 +239,7 @@ export default function ForceGraph({ center, similar }: Props) {
 
   function handleSvgPointerUp() {
     if (!dragging.current || !simRef.current) return;
-    // Release non-center nodes so the sim resumes
+    // Release similar nodes so physics resumes
     if (!dragging.current.isCenter) {
       dragging.current.fx = null;
       dragging.current.fy = null;
@@ -325,49 +249,60 @@ export default function ForceGraph({ center, similar }: Props) {
   }
 
   function handleNodeClick(e: React.MouseEvent, node: SimNode) {
-    if (hasMoved.current) return; // was a drag
+    if (hasMoved.current) return; // was a drag, not a click
     e.stopPropagation();
     if (!node.isCenter) router.push(artistHref(node.name));
   }
 
-  // ── Links between nodes ─────────────────────────────────────────────────────
+  // ── Resolve link endpoints for rendering ───────────────────────────────────
 
   const links = buildLinks(similar);
   const resolvedLinks = links.map((link) => {
     const sourceNode = nodes.find((n) => n.id === "center");
     const targetNode = nodes.find(
-      (n) => n.id === (typeof link.target === "object"
-        ? (link.target as SimNode).id
-        : link.target)
+      (n) =>
+        n.id ===
+        (typeof link.target === "object"
+          ? (link.target as SimNode).id
+          : link.target)
     );
     return { source: sourceNode, target: targetNode };
   });
 
   return (
-    <div
-      className="w-full rounded-2xl overflow-hidden border border-cream-300"
-      style={{ boxShadow: "inset 0 2px 8px rgba(74,55,40,0.06)" }}
-    >
+    <div className="w-full rounded-2xl overflow-hidden border border-ivory-200 shadow-inner">
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        style={{ width: "100%", height: "auto", display: "block", touchAction: "none" }}
+        style={{
+          width: "100%",
+          height: "auto",
+          display: "block",
+          touchAction: "none",
+        }}
         onPointerMove={handleSvgPointerMove}
         onPointerUp={handleSvgPointerUp}
         onPointerLeave={handleSvgPointerUp}
       >
-        <defs>
-          {/* Dot pattern for corkboard background */}
-          <pattern id="cork-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-            <circle cx="12" cy="12" r="1.2" fill="#D4B896" opacity="0.6" />
-          </pattern>
-        </defs>
+        {/* Background */}
+        <rect width={W} height={H} fill="#FAF4EE" />
 
-        {/* Corkboard background */}
-        <rect width={W} height={H} fill="#F5ECD7" />
-        <rect width={W} height={H} fill="url(#cork-dots)" />
+        {/* Concentric guide rings — suggest distance from centre */}
+        {[120, 200, 290].map((r) => (
+          <circle
+            key={r}
+            cx={CX}
+            cy={CY}
+            r={r}
+            fill="none"
+            stroke="#1A2B5E"
+            strokeWidth={1}
+            opacity={0.07}
+            strokeDasharray="5 9"
+          />
+        ))}
 
-        {/* ── String / yarn lines ── */}
+        {/* ── Link lines ── */}
         {resolvedLinks.map((link, i) => {
           if (!link.source || !link.target) return null;
           return (
@@ -377,18 +312,16 @@ export default function ForceGraph({ center, similar }: Props) {
               y1={link.source.y ?? CY}
               x2={link.target.x ?? CX}
               y2={link.target.y ?? CY}
-              stroke="#C4A882"
-              strokeWidth={1.5}
-              strokeDasharray="6 4"
-              strokeLinecap="round"
-              opacity={0.7}
+              stroke="#1A2B5E"
+              strokeWidth={1}
+              opacity={0.14}
             />
           );
         })}
 
-        {/* ── Nodes ── */}
+        {/* ── Circle nodes ── */}
         {nodes.map((node) => (
-          <PolaroidNode
+          <CircleNode
             key={node.id}
             node={node}
             onPointerDown={(e) => handleNodePointerDown(e, node)}
@@ -397,8 +330,8 @@ export default function ForceGraph({ center, similar }: Props) {
         ))}
       </svg>
 
-      <p className="text-center font-hand text-sm text-brown-400 py-2 bg-cream-100 border-t border-cream-300">
-        drag nodes to rearrange · click an artist to explore them ✦
+      <p className="text-center font-sans text-xs text-navy-muted py-2.5 bg-white border-t border-ivory-200">
+        drag to rearrange · click an artist to explore
       </p>
     </div>
   );

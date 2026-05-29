@@ -20,46 +20,18 @@ export function initials(name: string): string {
 }
 
 /**
- * Return a deterministic rotation in degrees [-5, +5] for a polaroid card,
- * based on the artist name so it's consistent across renders.
- */
-export function polaroidRotation(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) & 0xffffffff;
-  }
-  return ((Math.abs(hash) % 11) - 5); // -5 … +5
-}
-
-/**
- * Pick a washi-tape colour pair (bg, text) deterministically from the name.
- */
-const WASHI: { bg: string; text: string }[] = [
-  { bg: "#F4B8C1", text: "#7A3A42" }, // pink
-  { bg: "#9CCEE0", text: "#1A4A5C" }, // blue
-  { bg: "#F5D67E", text: "#5C4A1A" }, // yellow
-  { bg: "#A8C8A0", text: "#2A4A28" }, // green
-  { bg: "#C4A8D4", text: "#3A2A4A" }, // purple
-  { bg: "#F0A882", text: "#5C2A1A" }, // peach
-  { bg: "#9ED8C8", text: "#1A4A3A" }, // mint
-  { bg: "#D47878", text: "#4A1A1A" }, // red
-];
-
-export function washiColor(seed: string): { bg: string; text: string } {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash * 31 + seed.charCodeAt(i)) & 0xffffffff;
-  }
-  return WASHI[Math.abs(hash) % WASHI.length];
-}
-
-/**
- * Accent colour — for graph node placeholders.
- * Returns a more saturated colour than washi colours.
+ * Accent colour — deterministic from seed, used for circle node fills and avatars.
+ * Rich, slightly muted tones that work with white text and the navy/ivory palette.
  */
 const ACCENTS = [
-  "#C85A54", "#E8A45C", "#5A9CC8", "#6AAF7A",
-  "#9B6DC8", "#C86A8A", "#5ABCB0", "#C8A85A",
+  "#2A6B6B", // deep teal
+  "#C4593D", // terracotta
+  "#5A7A8F", // steel blue
+  "#7A5A8A", // dusty purple
+  "#B87840", // amber
+  "#4A8A66", // forest green
+  "#B85570", // rose
+  "#8A6A3A", // warm brown
 ];
 
 export function accentColor(seed: string): string {

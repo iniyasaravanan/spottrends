@@ -6,92 +6,76 @@
 
 @layer base {
   html {
-    @apply bg-cream-100 text-brown-800;
+    @apply bg-ivory-100 text-navy;
     color-scheme: light;
   }
 
   body {
     @apply min-h-screen font-sans;
-    /* Subtle dot-grid like a scrapbook backing paper */
-    background-image: radial-gradient(circle, #D4B896 1px, transparent 1px);
-    background-size: 24px 24px;
-    background-attachment: fixed;
-  }
-
-  h1, h2, h3 {
-    @apply font-hand;
   }
 
   ::selection {
-    @apply bg-washi-yellow text-brown-800;
+    background: rgba(26, 43, 94, 0.14);
+    color: #1A2B5E;
   }
 
-  /* Thin warm scrollbar */
+  /* Thin scrollbar */
   ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { @apply bg-cream-100; }
-  ::-webkit-scrollbar-thumb { @apply bg-cream-400 rounded-full; }
+  ::-webkit-scrollbar-track { @apply bg-ivory-100; }
+  ::-webkit-scrollbar-thumb { @apply bg-ivory-300 rounded-full; }
 }
 
 @layer components {
 
-  /* ── Cards & Papers ── */
-  .paper {
-    @apply bg-cream-50 rounded-2xl border border-cream-300;
-    box-shadow: var(--tw-shadow, 0 2px 8px rgba(74,55,40,0.08));
-  }
-
-  /* Polaroid card — add `style={{ transform: "rotate(Xdeg)" }}` per card */
-  .polaroid {
-    @apply bg-white border border-cream-300 rounded-sm;
-    box-shadow: 2px 4px 14px rgba(74,55,40,0.18), 0 1px 3px rgba(74,55,40,0.10);
-    transition: transform 0.2s ease, box-shadow 0.25s ease;
-  }
-  .polaroid:hover {
-    box-shadow: 5px 10px 24px rgba(74,55,40,0.22), 0 2px 6px rgba(74,55,40,0.14);
-  }
-
-  /* ── Washi tape tag ── */
-  .washi-tag {
-    @apply inline-block px-3 py-0.5 font-hand text-sm leading-relaxed;
-    box-shadow: 1px 1px 4px rgba(0,0,0,0.10);
-  }
-
-  /* ── Sticky note block ── */
-  .sticky-note {
-    @apply bg-washi-yellow/20 border-l-4 border-washi-yellow px-5 py-4 rounded-r-2xl;
-    box-shadow: 2px 2px 6px rgba(74,55,40,0.08);
+  /* ── Card ── */
+  .card {
+    @apply bg-white rounded-2xl border border-ivory-200 shadow-card;
   }
 
   /* ── Buttons ── */
   .btn-primary {
-    @apply font-hand text-base px-6 py-2.5 rounded-full bg-brown-800 text-cream-50
-           hover:bg-brown-700 active:scale-95 transition-all duration-150;
-    box-shadow: 2px 3px 8px rgba(74,55,40,0.25);
+    @apply font-display text-sm font-semibold tracking-wide px-6 py-2.5
+           rounded-full bg-navy text-ivory-50
+           hover:bg-navy-light active:scale-95 transition-all duration-150;
+    box-shadow: 0 2px 8px rgba(26, 43, 94, 0.22);
   }
 
   .btn-ghost {
-    @apply font-hand text-base text-brown-500 hover:text-brown-800 transition;
+    @apply font-sans text-sm text-navy-muted hover:text-navy transition;
   }
 
   /* ── Input ── */
-  .input-scrapbook {
-    @apply w-full bg-white text-brown-800 placeholder-brown-400 font-hand text-lg
-           border-2 border-cream-300 rounded-xl px-4 py-3
-           focus:outline-none focus:border-brown-400 focus:ring-0 transition;
-    box-shadow: inset 0 2px 4px rgba(74,55,40,0.06), 0 2px 6px rgba(74,55,40,0.06);
+  .input {
+    @apply w-full bg-white text-navy placeholder-navy-muted font-sans text-base
+           rounded-xl px-4 py-3
+           border-2 border-ivory-200
+           focus:outline-none focus:border-navy
+           transition;
   }
 
-  /* ── Misc ── */
+  /* ── Section heading ── */
   .section-title {
-    @apply font-hand text-2xl text-brown-800;
+    @apply font-display text-xl font-semibold tracking-tight text-navy;
   }
 
-  .divider-tape {
-    @apply relative flex items-center gap-3 my-2;
+  /* ── Genre / artist tag pill ── */
+  .tag {
+    @apply inline-flex items-center px-3 py-1 rounded-full
+           border border-navy-border
+           font-sans text-xs font-medium text-navy-muted
+           hover:border-navy hover:text-navy
+           transition-colors duration-150;
   }
-  .divider-tape::before,
-  .divider-tape::after {
+
+  /* ── Divider with centred label ── */
+  .divider {
+    @apply flex items-center gap-4 my-1;
+  }
+  .divider::before,
+  .divider::after {
     content: "";
-    @apply flex-1 h-px bg-cream-300;
+    flex: 1;
+    height: 1px;
+    @apply bg-ivory-200;
   }
 }
