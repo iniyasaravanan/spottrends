@@ -1,13 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // d3-force ships as ESM; transpile it so Next.js can bundle it
+  transpilePackages: ["d3-force"],
   images: {
+    // Only used if next/image is ever needed elsewhere
     remotePatterns: [
-      // Last.fm CDN
       { protocol: "https", hostname: "lastfm.freetls.fastly.net" },
-      // Older Last.fm image hosts
-      { protocol: "https", hostname: "userserve-ak.last.fm" },
-      { protocol: "http",  hostname: "userserve-ak.last.fm" },
     ],
   },
 };

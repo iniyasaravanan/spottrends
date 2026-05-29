@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Users, Play, ExternalLink, ArrowLeft, Radio } from "lucide-react";
 import type { Metadata } from "next";
 import {
   getArtistInfo,
@@ -9,11 +8,11 @@ import {
   cleanBio,
   getTags,
 } from "@/lib/lastfm";
-import { formatNumber, artistHref, accentColor } from "@/lib/utils";
+import { formatNumber, artistHref, washiColor, polaroidRotation } from "@/lib/utils";
 import ArtistAvatar from "@/components/ArtistAvatar";
-import SimilarArtistCard from "@/components/SimilarArtistCard";
+import ForceGraph from "@/components/ForceGraph";
 
-// ─── Metadata (SSR) ───────────────────────────────────────────────────────────
+// ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({
   params,
@@ -23,7 +22,7 @@ export async function generateMetadata({
   const name = decodeURIComponent(params.name);
   try {
     const artist = await getArtistInfo(name);
-    const bio = cleanBio(artist.bio?.summary ?? "").slice(0, 160);
+    const bio = cleanBio(artist.bio?.summary ?? "").slice(0, 155);
     return {
       title: `${artist.name} — Genre Explorer`,
       description: bio || `Explore ${artist.name}'s genres, bio, and similar artists.`,
@@ -33,51 +32,44 @@ export async function generateMetadata({
   }
 }
 
-// ─── Stat chip ────────────────────────────────────────────────────────────────
+// ─── Washi tag ────────────────────────────────────────────────────────────────
 
-function StatChip({
-  icon,
-  value,
-  label,
+function WashiTag({
+  name,
+  url,
+  index,
 }: {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
+  name: string;
+  url: string;
+  index: number;
 }) {
+  const { bg, text } = washiColor(name);
+  const rot = index % 2 === 0 ? "-rotate-1" : "rotate-1";
+
   return (
-    <div className="flex items-center gap-2 bg-lfm-surface border border-lfm-border rounded-xl px-4 py-3">
-      <span className="text-lfm-red">{icon}</span>
-      <div>
-        <p className="text-lg font-bold leading-none">{value}</p>
-        <p className="text-xs text-lfm-muted mt-0.5">{label}</p>
-      </div>
-    </div>
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`washi-tag ${rot} hover:brightness-95 transition`}
+      style={{ backgroundColor: bg + "CC", color: text }}
+    >
+      {name}
+    </a>
   );
 }
 
-// ─── Tag list ─────────────────────────────────────────────────────────────────
+// ─── Stat chip ────────────────────────────────────────────────────────────────
 
-function TagList({ tags }: { tags: { name: string; url: string }[] }) {
-  if (!tags.length) return null;
+function StatChip({ icon, value, label }: { icon: string; value: string; label: string }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {tags.map((tag) => (
-        <a
-          key={tag.name}
-          href={tag.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                     border border-lfm-border text-white hover:border-white/40 transition"
-          style={{ backgroundColor: accentColor(tag.name) + "22" }}
-        >
-          <span
-            className="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0"
-            style={{ backgroundColor: accentColor(tag.name) }}
-          />
-          {tag.name}
-        </a>
-      ))}
+    <div className="bg-white border border-cream-300 rounded-xl px-4 py-3 flex items-center gap-2.5"
+         style={{ boxShadow: "1px 2px 6px rgba(74,55,40,0.08)" }}>
+      <span className="text-xl">{icon}</span>
+      <div>
+        <p className="font-hand text-xl leading-none text-brown-800">{value}</p>
+        <p className="font-sans text-xs text-brown-400 mt-0.5">{label}</p>
+      </div>
     </div>
   );
 }
@@ -87,17 +79,11 @@ function TagList({ tags }: { tags: { name: string; url: string }[] }) {
 function Bio({ raw }: { raw: string }) {
   const text = cleanBio(raw);
   if (!text) return null;
-
-  // Split into paragraphs for readable rendering
-  const paragraphs = text
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-
+  const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   return (
-    <div className="space-y-3">
+    <div className="sticky-note space-y-3">
       {paragraphs.map((p, i) => (
-        <p key={i} className="text-lfm-light text-sm leading-relaxed">
+        <p key={i} className="font-sans text-sm text-brown-700 leading-relaxed">
           {p}
         </p>
       ))}
@@ -114,7 +100,6 @@ export default async function ArtistPage({
 }) {
   const name = decodeURIComponent(params.name);
 
-  // Fetch in parallel; similar artists failure is non-fatal
   const [artist, similar] = await Promise.all([
     getArtistInfo(name).catch(() => null),
     getSimilarArtists(name, 12).catch(() => []),
@@ -126,127 +111,147 @@ export default async function ArtistPage({
   const tags      = getTags(artist);
   const listeners = formatNumber(artist.stats?.listeners ?? "0");
   const scrobbles = formatNumber(artist.stats?.playcount ?? "0");
-  const hasBio    = !!artist.bio?.summary?.trim();
+  const hasBio    = !!cleanBio(artist.bio?.summary ?? "");
+  const rot       = polaroidRotation(artist.name);
+
+  // Prepare similar artists for the force graph
+  const graphSimilar = similar.map((s) => ({
+    name: s.name,
+    imageUrl: getImage(s.image, "large"),
+    match: parseFloat(s.match),
+  }));
 
   return (
-    <div className="space-y-10 animate-fade-in">
+    <div className="space-y-10 animate-fade-up">
 
-      {/* ── Back link ── */}
-      <Link href="/" className="inline-flex items-center gap-1.5 btn-ghost">
-        <ArrowLeft size={14} />
-        Back to search
+      {/* ── Back ── */}
+      <Link href="/" className="btn-ghost inline-flex items-center gap-1">
+        ← back to search
       </Link>
 
-      {/* ── Artist header ── */}
-      <div className="flex flex-col sm:flex-row gap-6 items-start">
-        {/* Photo */}
-        <ArtistAvatar
-          name={artist.name}
-          imageUrl={imageUrl}
-          size={160}
-          className="rounded-2xl shadow-2xl flex-shrink-0"
-        />
+      {/* ── Artist header (big polaroid + info) ── */}
+      <div className="flex flex-col sm:flex-row gap-8 items-start">
 
-        {/* Info */}
-        <div className="flex-1 space-y-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-lfm-muted mb-1">
-              Artist
-            </p>
-            <h1 className="text-4xl sm:text-5xl font-bold leading-none break-words">
-              {artist.name}
-            </h1>
+        {/* Big polaroid photo */}
+        <div
+          className="polaroid flex-shrink-0 mx-auto sm:mx-0"
+          style={{ transform: `rotate(${rot}deg)`, width: 180 }}
+        >
+          {/* Washi tape strip */}
+          <div
+            className="h-5 w-16 mx-auto -mt-2.5 mb-2 rounded-sm opacity-85"
+            style={{ backgroundColor: washiColor(artist.name).bg }}
+          />
+          <div className="mx-3 overflow-hidden bg-cream-200" style={{ aspectRatio: "1" }}>
+            <ArtistAvatar
+              name={artist.name}
+              imageUrl={imageUrl}
+              size={160}
+              className="w-full h-full"
+            />
           </div>
-
-          {/* Genre tags */}
-          {tags.length > 0 && <TagList tags={tags.slice(0, 8)} />}
-
-          {/* Stats row */}
-          <div className="flex flex-wrap gap-3">
-            <StatChip
-              icon={<Users size={16} />}
-              value={listeners}
-              label="listeners"
-            />
-            <StatChip
-              icon={<Play size={16} />}
-              value={scrobbles}
-              label="scrobbles"
-            />
+          <div className="px-3 pt-2 pb-5 text-center">
+            <p className="font-hand text-xl text-brown-800 leading-snug">{artist.name}</p>
             {artist.ontour === "1" && (
-              <StatChip
-                icon={<Radio size={16} />}
-                value="On Tour"
-                label="right now"
-              />
+              <p className="font-hand text-sm text-washi-red mt-0.5">🎪 on tour!</p>
             )}
           </div>
+        </div>
+
+        {/* Info column */}
+        <div className="flex-1 space-y-5 pt-2">
+          <div>
+            <p className="font-hand text-sm text-brown-400 uppercase tracking-widest mb-1">Artist</p>
+            <h1 className="font-hand text-5xl text-brown-800 leading-none">{artist.name}</h1>
+          </div>
+
+          {/* Stats */}
+          <div className="flex flex-wrap gap-3">
+            <StatChip icon="👂" value={listeners} label="listeners" />
+            <StatChip icon="▶️" value={scrobbles} label="scrobbles" />
+          </div>
+
+          {/* Genre / washi tags */}
+          {tags.length > 0 && (
+            <div className="space-y-2">
+              <p className="font-hand text-base text-brown-500">✦ genres &amp; tags</p>
+              <div className="flex flex-wrap gap-2">
+                {tags.slice(0, 10).map((tag, i) => (
+                  <WashiTag key={tag.name} name={tag.name} url={tag.url} index={i} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Last.fm link */}
           <a
             href={artist.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-lfm-red hover:underline"
+            className="font-hand text-sm text-brown-400 hover:text-brown-700 transition inline-flex items-center gap-1"
           >
-            View on Last.fm
-            <ExternalLink size={13} />
+            view on Last.fm ↗
           </a>
         </div>
       </div>
 
-      {/* ── Divider ── */}
-      <div className="divider" />
-
-      {/* ── Bio ── */}
+      {/* ── About / bio ── */}
       {hasBio && (
         <section className="space-y-3">
-          <h2 className="section-title">About</h2>
+          <h2 className="section-title">✍︎ About</h2>
           <Bio raw={artist.bio.summary} />
         </section>
       )}
 
-      {/* ── Genre tags (expanded) ── */}
-      {tags.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="section-title">Genres &amp; Tags</h2>
-          <TagList tags={tags} />
-        </section>
-      )}
+      {/* ── Similarity web ── */}
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between flex-wrap gap-2">
+          <h2 className="section-title">🕸 Similarity Web</h2>
+          <p className="font-hand text-sm text-brown-400">
+            artists closer to the centre are more similar
+          </p>
+        </div>
 
-      {/* ── Similar artists ── */}
-      {similar.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-baseline justify-between">
-            <h2 className="section-title">Similar Artists</h2>
-            <p className="text-xs text-lfm-muted">Click any to keep exploring</p>
+        {graphSimilar.length > 0 ? (
+          <ForceGraph
+            center={{ name: artist.name, imageUrl }}
+            similar={graphSimilar}
+          />
+        ) : (
+          <div className="paper p-8 text-center space-y-2">
+            <p className="text-3xl">🎵</p>
+            <p className="font-hand text-lg text-brown-500">No similar artists found.</p>
+            <Link href="/" className="btn-ghost inline-block mt-1">
+              ← explore another artist
+            </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {similar.map((a) => (
-              <SimilarArtistCard key={a.name} artist={a} />
+        )}
+      </section>
+
+      {/* ── Quick links: similar artists as text ── */}
+      {similar.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="section-title">✦ Similar Artists</h2>
+          <div className="flex flex-wrap gap-2">
+            {similar.map((s) => (
+              <Link
+                key={s.name}
+                href={artistHref(s.name)}
+                className="bg-white border border-cream-300 rounded-full px-3 py-1
+                           font-hand text-sm text-brown-700 hover:border-brown-400
+                           hover:bg-cream-50 transition-all duration-150"
+              >
+                {s.name}
+              </Link>
             ))}
           </div>
         </section>
       )}
 
-      {/* ── Empty similar state ── */}
-      {similar.length === 0 && (
-        <section className="card p-8 text-center space-y-2">
-          <p className="text-lfm-muted text-sm">No similar artists found.</p>
-          <Link href="/" className="btn-ghost inline-block">
-            ← Search another artist
-          </Link>
-        </section>
-      )}
-
-      {/* ── Explore more CTA ── */}
-      {similar.length > 0 && (
-        <div className="text-center pt-2">
-          <Link href="/" className="btn-ghost">
-            ← Search a different artist
-          </Link>
-        </div>
-      )}
+      {/* ── Back CTA ── */}
+      <div className="text-center pt-4">
+        <Link href="/" className="btn-ghost">← search a different artist</Link>
+      </div>
 
     </div>
   );

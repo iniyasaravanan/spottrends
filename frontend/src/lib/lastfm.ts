@@ -121,7 +121,17 @@ function normaliseArray<T>(v: T | T[]): T[] {
   return Array.isArray(v) ? v : [v];
 }
 
-/** Pick the best non-empty image URL, preferring larger sizes. */
+/**
+ * Last.fm returns this MD5 hash as the placeholder when an artist has no image.
+ * Filter it out so we can fall back to our own avatar instead of a grey box.
+ */
+const LASTFM_PLACEHOLDER_HASH = "2a96cbd8b46e442fc41c2b86b821562f";
+
+function isRealImage(url: string): boolean {
+  return !!url && !url.includes(LASTFM_PLACEHOLDER_HASH);
+}
+
+/** Pick the best non-empty, non-placeholder image URL, preferring larger sizes. */
 export function getImage(
   images: LfmImage[] | undefined,
   preferred: "extralarge" | "large" | "medium" = "extralarge"
@@ -134,7 +144,7 @@ export function getImage(
       ? (["large", "extralarge", "mega", "medium", "small"] as const)
       : (["medium", "large", "extralarge", "small"] as const);
   for (const size of order) {
-    const img = images.find((i) => i.size === size && i["#text"]);
+    const img = images.find((i) => i.size === size && isRealImage(i["#text"]));
     if (img?.["#text"]) return img["#text"];
   }
   return null;

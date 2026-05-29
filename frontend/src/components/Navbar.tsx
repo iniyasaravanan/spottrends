@@ -1,26 +1,28 @@
 import Link from "next/link";
-import { Music2 } from "lucide-react";
 
 export default function Navbar() {
   return (
-    <nav className="border-b border-lfm-border bg-lfm-bg/90 backdrop-blur sticky top-0 z-50">
+    <nav className="sticky top-0 z-50 bg-cream-50/90 backdrop-blur border-b border-cream-300">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+
         <Link
           href="/"
-          className="flex items-center gap-2 text-white font-bold text-lg hover:text-lfm-red transition"
+          className="flex items-center gap-2 font-hand text-2xl text-brown-800 hover:text-brown-600 transition"
         >
-          <Music2 size={20} className="text-lfm-red" />
+          <span className="text-xl">♪</span>
           Genre Explorer
+          <span className="text-xl">♫</span>
         </Link>
 
         <a
           href="https://www.last.fm"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-lfm-muted hover:text-lfm-light transition"
+          className="font-hand text-sm text-brown-400 hover:text-brown-600 transition"
         >
-          Powered by Last.fm
+          powered by Last.fm ✦
         </a>
+
       </div>
     </nav>
   );

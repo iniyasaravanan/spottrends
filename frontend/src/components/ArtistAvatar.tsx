@@ -1,4 +1,6 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
 import { initials, accentColor } from "@/lib/utils";
 
 interface Props {
@@ -9,8 +11,12 @@ interface Props {
 }
 
 /**
- * Renders an artist photo if one exists, otherwise a coloured
- * initials placeholder that is deterministically based on the name.
+ * Shows the artist photo if one exists (with onError fallback),
+ * or a deterministically coloured initials placeholder.
+ *
+ * Uses a plain <img> (not next/image) so:
+ *  - no domain whitelist needed
+ *  - onError degrades gracefully to the initials placeholder
  */
 export default function ArtistAvatar({
   name,
@@ -18,28 +24,31 @@ export default function ArtistAvatar({
   size = 64,
   className = "",
 }: Props) {
-  const rounded = `rounded-xl`;
+  const [imgFailed, setImgFailed] = useState(false);
 
-  if (imageUrl) {
+  if (imageUrl && !imgFailed) {
     return (
-      <Image
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
         src={imageUrl}
         alt={name}
         width={size}
         height={size}
-        className={`${rounded} object-cover flex-shrink-0 ${className}`}
+        className={`object-cover flex-shrink-0 ${className}`}
+        onError={() => setImgFailed(true)}
       />
     );
   }
 
+  // Initials placeholder — same colour every render for a given name
   return (
     <div
-      className={`${rounded} flex-shrink-0 flex items-center justify-center font-bold text-white select-none ${className}`}
+      className={`flex-shrink-0 flex items-center justify-center font-bold text-white select-none ${className}`}
       style={{
         width: size,
         height: size,
         backgroundColor: accentColor(name),
-        fontSize: size * 0.32,
+        fontSize: Math.round(size * 0.34),
       }}
     >
       {initials(name)}

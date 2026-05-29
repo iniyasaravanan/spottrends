@@ -2,56 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Google Fonts are loaded via next/font in layout.tsx ── */
+
 @layer base {
   html {
-    @apply bg-lfm-bg text-white;
-    color-scheme: dark;
+    @apply bg-cream-100 text-brown-800;
+    color-scheme: light;
   }
+
   body {
-    @apply min-h-screen font-sans antialiased;
+    @apply min-h-screen font-sans;
+    /* Subtle dot-grid like a scrapbook backing paper */
+    background-image: radial-gradient(circle, #D4B896 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-attachment: fixed;
   }
-  /* Scrollbar */
+
+  h1, h2, h3 {
+    @apply font-hand;
+  }
+
+  ::selection {
+    @apply bg-washi-yellow text-brown-800;
+  }
+
+  /* Thin warm scrollbar */
   ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { @apply bg-lfm-border rounded-full; }
+  ::-webkit-scrollbar-track { @apply bg-cream-100; }
+  ::-webkit-scrollbar-thumb { @apply bg-cream-400 rounded-full; }
 }
 
 @layer components {
-  .card {
-    @apply bg-lfm-card rounded-2xl border border-lfm-border;
+
+  /* ── Cards & Papers ── */
+  .paper {
+    @apply bg-cream-50 rounded-2xl border border-cream-300;
+    box-shadow: var(--tw-shadow, 0 2px 8px rgba(74,55,40,0.08));
   }
 
-  .card-hover {
-    @apply card transition-all duration-200
-           hover:border-white/20 hover:-translate-y-0.5 hover:shadow-xl;
+  /* Polaroid card — add `style={{ transform: "rotate(Xdeg)" }}` per card */
+  .polaroid {
+    @apply bg-white border border-cream-300 rounded-sm;
+    box-shadow: 2px 4px 14px rgba(74,55,40,0.18), 0 1px 3px rgba(74,55,40,0.10);
+    transition: transform 0.2s ease, box-shadow 0.25s ease;
+  }
+  .polaroid:hover {
+    box-shadow: 5px 10px 24px rgba(74,55,40,0.22), 0 2px 6px rgba(74,55,40,0.14);
   }
 
-  .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-           bg-white/10 text-lfm-light;
+  /* ── Washi tape tag ── */
+  .washi-tag {
+    @apply inline-block px-3 py-0.5 font-hand text-sm leading-relaxed;
+    box-shadow: 1px 1px 4px rgba(0,0,0,0.10);
   }
 
-  .input {
-    @apply w-full bg-lfm-surface text-white placeholder-lfm-muted
-           border border-lfm-border rounded-xl px-4 py-3
-           focus:outline-none focus:ring-2 focus:ring-lfm-red focus:border-transparent
-           transition;
+  /* ── Sticky note block ── */
+  .sticky-note {
+    @apply bg-washi-yellow/20 border-l-4 border-washi-yellow px-5 py-4 rounded-r-2xl;
+    box-shadow: 2px 2px 6px rgba(74,55,40,0.08);
   }
 
+  /* ── Buttons ── */
   .btn-primary {
-    @apply bg-lfm-red text-white font-semibold px-5 py-2.5 rounded-full
-           hover:brightness-110 active:scale-95 transition-all duration-150;
+    @apply font-hand text-base px-6 py-2.5 rounded-full bg-brown-800 text-cream-50
+           hover:bg-brown-700 active:scale-95 transition-all duration-150;
+    box-shadow: 2px 3px 8px rgba(74,55,40,0.25);
   }
 
   .btn-ghost {
-    @apply text-lfm-light hover:text-white transition text-sm;
+    @apply font-hand text-base text-brown-500 hover:text-brown-800 transition;
   }
 
+  /* ── Input ── */
+  .input-scrapbook {
+    @apply w-full bg-white text-brown-800 placeholder-brown-400 font-hand text-lg
+           border-2 border-cream-300 rounded-xl px-4 py-3
+           focus:outline-none focus:border-brown-400 focus:ring-0 transition;
+    box-shadow: inset 0 2px 4px rgba(74,55,40,0.06), 0 2px 6px rgba(74,55,40,0.06);
+  }
+
+  /* ── Misc ── */
   .section-title {
-    @apply text-lg font-semibold text-white;
+    @apply font-hand text-2xl text-brown-800;
   }
 
-  .divider {
-    @apply border-t border-lfm-border;
+  .divider-tape {
+    @apply relative flex items-center gap-3 my-2;
+  }
+  .divider-tape::before,
+  .divider-tape::after {
+    content: "";
+    @apply flex-1 h-px bg-cream-300;
   }
 }
