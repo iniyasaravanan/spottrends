@@ -54,6 +54,15 @@ export interface AudioFeatures {
   speechiness: number;
 }
 
+export interface ArtistTrack {
+  rank: number;
+  spotifyId: string;
+  name: string;
+  artists: string[];
+  albumName: string;
+  imageUrl: string | null;
+}
+
 export interface PopularitySnapshot {
   id: string;
   artistId: string;
@@ -117,6 +126,9 @@ export const api = {
 
     audioFeatures: (id: string) =>
       request<AudioFeatures>(`/api/artist/${id}/audio-features`),
+
+    topTracks: (id: string) =>
+      request<ArtistTrack[]>(`/api/artist/${id}/top-tracks`),
   },
 
   user: {

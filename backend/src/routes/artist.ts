@@ -122,6 +122,33 @@ router.get("/:id/history", async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/artist/:id/top-tracks
+router.get("/:id/top-tracks", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const artist = await prisma.artist.findUnique({
+      where: { id },
+      select: { spotifyId: true },
+    });
+    if (!artist) return res.status(404).json({ error: "Artist not found" });
+
+    const tracks = await getArtistTopTracks(artist.spotifyId);
+    return res.json(
+      tracks.slice(0, 10).map((t, i) => ({
+        rank: i + 1,
+        spotifyId: t.id,
+        name: t.name,
+        artists: t.artists.map((a) => a.name),
+        albumName: t.album.name,
+        imageUrl: t.album.images?.[0]?.url ?? null,
+      }))
+    );
+  } catch (err) {
+    console.error("Get top tracks error:", err);
+    return res.status(500).json({ error: "Failed to fetch top tracks" });
+  }
+});
+
 // GET /api/artist/:id/audio-features
 router.get("/:id/audio-features", async (req: Request, res: Response) => {
   const { id } = req.params;

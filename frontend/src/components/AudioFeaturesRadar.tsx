@@ -17,11 +17,18 @@ interface ArtistFeatures {
   color: string;
 }
 
-interface Props {
-  artists: ArtistFeatures[];
+export interface RadarAxis {
+  key: string;
+  label: string;
 }
 
-const AXES = [
+interface Props {
+  artists: ArtistFeatures[];
+  /** Which axes to render. Defaults to all eight features. */
+  axes?: RadarAxis[];
+}
+
+const DEFAULT_AXES: RadarAxis[] = [
   { key: "energy", label: "Energy" },
   { key: "danceability", label: "Dance" },
   { key: "valence", label: "Valence" },
@@ -32,13 +39,12 @@ const AXES = [
 ];
 
 function normalise(key: string, val: number): number {
-  // tempo is 0–250 BPM; scale to 0–1
   if (key === "tempo") return Math.min(val / 200, 1);
   return val;
 }
 
-export default function AudioFeaturesRadar({ artists }: Props) {
-  const data = AXES.map(({ key, label }) => {
+export default function AudioFeaturesRadar({ artists, axes = DEFAULT_AXES }: Props) {
+  const data = axes.map(({ key, label }) => {
     const point: Record<string, string | number> = { subject: label };
     for (const a of artists) {
       point[a.name] = parseFloat(
