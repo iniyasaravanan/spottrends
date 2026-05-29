@@ -11,7 +11,7 @@ const PORT = parseInt(process.env.PORT ?? "4000", 10);
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: ["http://localhost:3000", "http://localhost:3001", "https://spottrends-app.vercel.app"],
     credentials: true,
   })
 );
