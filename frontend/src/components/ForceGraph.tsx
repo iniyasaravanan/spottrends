@@ -282,7 +282,7 @@ export default function ForceGraph({ center, similar }: Props) {
       });
 
     simRef.current = sim;
-    return () => sim.stop();
+    return () => { sim.stop(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
